@@ -1,0 +1,17 @@
+<configuration>
+  <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+  <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+  <appender name="JSON_FILE" class="ch.qos.logback.core.FileAppender">
+    <file>/Users/wayne/Desktop/docker/ELK/logs/app-log.json</file>
+    <append>true</append>
+<encoder class="net.logstash.logback.encoder.LogstashEncoder">
+  <includeMdcKeyName>status</includeMdcKeyName>
+  <includeMdcKeyName>traceId</includeMdcKeyName>
+</encoder>  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="CONSOLE"/>
+    <appender-ref ref="JSON_FILE"/>
+  </root>
+</configuration>
