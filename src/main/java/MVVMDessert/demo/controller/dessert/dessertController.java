@@ -121,6 +121,11 @@ public class dessertController {
 		return new ModelAndView("/backView/order");
 	}
 
+	@RequestMapping("/ratingView")
+	public ModelAndView indexrating(Model model) {
+		return new ModelAndView("/frontView/rating");
+	}
+	
 	@RequestMapping("/backView")
 	public ModelAndView index(Model model) {
 		return new ModelAndView("/backView/dessert");
