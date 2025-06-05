@@ -19,6 +19,10 @@ let dessertQuery = new Vue({
     sessionTimer: null,
     sessionExpiryMinutes: 4,
     ttlInMinutes:2,
+    
+    // 20250605 ADD for tapu use
+    Budget:'',
+    recommendList:[]
   },
   methods:{
 	  findAll: function(){
@@ -31,6 +35,19 @@ let dessertQuery = new Vue({
 			 console.log(error); 
 		  });
 	  },
+	  
+	  findRecommendAll: function(){
+		  var _this = this;
+		  axios.post('/dessert/desserRecommendQuery',{
+			  Budget :this.Budget
+		  }).then(function(response){
+			  _this.recommendList = response.data;
+        // _this.backviewdessert=true;
+		  }).catch(function(error){
+			 console.log(error); 
+		  });
+	  },
+	  
     
       addShoppingCart: function(){
         let _this = this;

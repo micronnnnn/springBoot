@@ -1,6 +1,7 @@
 package MVVMDessert.demo.controller.dessert;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Set;
 
 import javax.validation.ConstraintViolation;
@@ -9,6 +10,8 @@ import javax.validation.Valid;
 import javax.validation.Validator;
 import javax.validation.groups.Default;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,13 +35,9 @@ import MVVMDessert.demo.dao.dessertDAO;
 import MVVMDessert.demo.model.dessert;
 import MVVMDessert.demo.service.dessertService;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 @RestController
 public class dessertController {
-    private static final Logger logger = LogManager.getLogger(dessertController.class);
-
+	private static final Logger logger = LogManager.getLogger(dessertController.class);
 
 //	@Autowired
 //	private JedisPool jPool;
@@ -52,16 +51,18 @@ public class dessertController {
 	private Validator validator;
 	@Autowired
 	private static dessertDAO dessertDao;
+	@Autowired
+	private dessertService dessertService;
 
 	static {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(DataSourceConfig.class);
 		dessertDao = context.getBean(dessertDAO.class);
 	}
-	
-    @GetMapping("/test-error")
-    public String testError() {
-        throw new RuntimeException("故意拋出錯誤來產生 500");
-    }
+
+	@GetMapping("/test-error")
+	public String testError() {
+		throw new RuntimeException("故意拋出錯誤來產生 500");
+	}
 
 //	@GetMapping("/webFluxAsString")
 //	public Mono<String> getAllDessertsAsString() {
@@ -77,6 +78,20 @@ public class dessertController {
 //					}
 //				});
 //	}
+
+	@PostMapping("/desserRecommendQuery")
+	public List<dessert> dessertQueryRecommedAll(@RequestBody String jsonBody) {
+		JSONObject jsonRequests = (JSONObject) new JSONTokener(jsonBody).nextValue();
+		Integer budget = jsonRequests.getInt("Budget");
+		System.out.println("budget is " + budget);
+//		Jedis jedis = jPool.getResource();
+//		jedis.set("3", "test");
+//		jedis.expire("3", 10);
+
+		logger.info("載入成功");
+		return dessertService.findBestCombinationByTabuSearch(budget);
+//		jPool.destroy();
+	}
 
 	@PostMapping("/dessertQuery")
 	public String dessertQueryAll() {
@@ -125,7 +140,7 @@ public class dessertController {
 	public ModelAndView indexrating(Model model) {
 		return new ModelAndView("/frontView/rating");
 	}
-	
+
 	@RequestMapping("/backView")
 	public ModelAndView index(Model model) {
 		return new ModelAndView("/backView/dessert");
