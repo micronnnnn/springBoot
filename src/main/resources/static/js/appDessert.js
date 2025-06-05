@@ -36,9 +36,9 @@ let dessertQuery = new Vue({
 		  });
 	  },
 	  
-	  findRecommendAll: function(){
+	  findRecommendAllMost: function(){
 		  var _this = this;
-		  axios.post('/dessert/desserRecommendQuery',{
+		  axios.post('/dessert/desserRecommendQueryMost',{
 			  Budget :this.Budget
 		  }).then(function(response){
 			  _this.recommendList = response.data;

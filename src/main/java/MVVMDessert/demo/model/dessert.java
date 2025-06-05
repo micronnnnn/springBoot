@@ -34,6 +34,15 @@ public class dessert implements java.io.Serializable {
 	@NotNull(message = "甜點圖片:請勿空白")
 	@picRule(message = "甜點圖片:請確認格式")
 	private String dessert_pic;
+	private Integer selectedAmount = Integer.valueOf(1);
+
+	public Integer getSelectedAmount() {
+		return selectedAmount;
+	}
+
+	public void setSelectedAmount(Integer selectedAmount) {
+		this.selectedAmount = selectedAmount;
+	}
 
 	public dessert() {
 

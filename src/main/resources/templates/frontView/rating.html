@@ -27,25 +27,14 @@ table tbody tr td.r-o {
 	<section class="rooms-section spad">
 		<div id="dessertQuery" class="container">
 			<br> <br>
-			<h2>請輸入預算</h2><form v-on:submit.prevent="findRecommendAll">
-			<table class="table table-striped">
-				<thead class="thead-dark">
-					<tr>
-						<th scope="col">金額</th>
-					</tr>
-				</thead>
-				<tbody>
-				<td><input
-					type="text" class="form-control" id="input_address"
-					placeholder="請輸入金額" v-model.trim="Budget"><br>
-							<button class="btn btn-primary sub_btn" type="submit">送出</button>
-						</td>
-				</tbody>
-			</table></form>
-			
+			<h2>請輸入預算</h2>
+			<form @submit.prevent>
+  				<input type="text" class="form-control" id="input_address" placeholder="請輸入金額" v-model.trim="Budget"><br>
+  				<button type="button" class="btn btn-primary sub_btn" @click="findRecommendAllMost">送出（最多種類）</button>
+  				<button type="button" class="btn btn-secondary sub_btn" @click="">送出（最多種類與最接近價格）</button>
+  				<button type="button" class="btn btn-success sub_btn" @click="">送出（最便宜）</button>
+			</form>	
 			<br>
-			<h1>本系統為您推薦cp值最高的選擇如下</h1>
-			
 			<table class="table table-striped">
 						<thead class="thead-dark">
 							<tr>
@@ -65,8 +54,8 @@ table tbody tr td.r-o {
 									width=300px height=200px></td>
 								<td>{{d.dessert_name}}</td>
 								<td>{{d.dessert_price}}</td>
-								<td></td>
-								<td></td>
+								<td>{{d.selectedAmount}}</td>
+								<td>{{ d.dessert_price * d.selectedAmount }}</td>
 							</tr>
 
 						</tbody>

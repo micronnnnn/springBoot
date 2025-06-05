@@ -79,7 +79,7 @@ public class dessertController {
 //				});
 //	}
 
-	@PostMapping("/desserRecommendQuery")
+	@PostMapping("/desserRecommendQueryMost")
 	public List<dessert> dessertQueryRecommedAll(@RequestBody String jsonBody) {
 		JSONObject jsonRequests = (JSONObject) new JSONTokener(jsonBody).nextValue();
 		Integer budget = jsonRequests.getInt("Budget");
