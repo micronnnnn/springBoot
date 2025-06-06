@@ -84,13 +84,17 @@ public class dessertController {
 		JSONObject jsonRequests = (JSONObject) new JSONTokener(jsonBody).nextValue();
 		Integer budget = jsonRequests.getInt("Budget");
 		System.out.println("budget is " + budget);
-//		Jedis jedis = jPool.getResource();
-//		jedis.set("3", "test");
-//		jedis.expire("3", 10);
-
 		logger.info("載入成功");
 		return dessertService.findBestCombinationByTabuSearch(budget);
-//		jPool.destroy();
+	}
+
+	@PostMapping("/desserRecommendCPmost")
+	public List<dessert> dessertQueryRecommedCpMost(@RequestBody String jsonBody) {
+		JSONObject jsonRequests = (JSONObject) new JSONTokener(jsonBody).nextValue();
+		Integer budget = jsonRequests.getInt("Budget");
+		System.out.println("budget is " + budget);
+		logger.info("載入成功");
+		return dessertService.selectDessertsByBudget(budget);
 	}
 
 	@PostMapping("/dessertQuery")

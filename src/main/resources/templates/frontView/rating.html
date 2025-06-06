@@ -31,7 +31,7 @@ table tbody tr td.r-o {
 			<form @submit.prevent>
   				<input type="text" class="form-control" id="input_address" placeholder="請輸入金額" v-model.trim="Budget"><br>
   				<button type="button" class="btn btn-primary sub_btn" @click="findRecommendAllMost">送出（最多種類）</button>
-  				<button type="button" class="btn btn-secondary sub_btn" @click="">送出（最多種類與最接近價格）</button>
+  				<button type="button" class="btn btn-secondary sub_btn" @click="findRecommendCPmost">送出（最多種類與最接近價格）</button>
   				<button type="button" class="btn btn-success sub_btn" @click="">送出（最便宜）</button>
 			</form>	
 			<br>

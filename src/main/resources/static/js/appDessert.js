@@ -48,6 +48,18 @@ let dessertQuery = new Vue({
 		  });
 	  },
 	  
+	 findRecommendCPmost: function(){
+		  var _this = this;
+		  axios.post('/dessert/desserRecommendCPmost',{
+			  Budget :this.Budget
+		  }).then(function(response){
+			  _this.recommendList = response.data;
+        // _this.backviewdessert=true;
+		  }).catch(function(error){
+			 console.log(error); 
+		  });
+	  },
+	  
     
       addShoppingCart: function(){
         let _this = this;

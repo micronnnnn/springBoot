@@ -2,9 +2,12 @@ package MVVMDessert.demo.service;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -37,85 +40,151 @@ public class dessertService {
 		try {
 			allDesserts = dessertDao.getAllDessertObjectList();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-		// 初始化起始解（例如亂選一堆甜點）
-		List<dessert> currentSolution = getRandomInitialSolution(allDesserts, budget);
-		List<dessert> bestSolution = new ArrayList<>(currentSolution);
+		Map<dessert, Integer> currentSolution = getRandomInitialSolution(allDesserts, budget);
+		Map<dessert, Integer> bestSolution = new HashMap<>(currentSolution);
 
 		Set<String> tabuList = new LinkedHashSet<>();
 		int maxIterations = 1000;
 
 		for (int i = 0; i < maxIterations; i++) {
-			List<List<dessert>> neighbors = generateNeighbors(currentSolution, allDesserts, budget);
-			List<dessert> bestNeighbor = null;
+			List<Map<dessert, Integer>> neighbors = generateNeighbors(currentSolution, allDesserts, budget);
+			Map<dessert, Integer> bestNeighbor = null;
 
-			for (List<dessert> neighbor : neighbors) {
-				if (!tabuList.contains(generateKey(neighbor))) {
-					if (getTotalAmount(neighbor) > getTotalAmount(bestSolution)) {
-						bestNeighbor = neighbor;
-						break;
-					}
+			for (Map<dessert, Integer> neighbor : neighbors) {
+				String key = generateKey(neighbor);
+				if (!tabuList.contains(key) && getUniqueDessertCount(neighbor) > getUniqueDessertCount(bestSolution)) {
+					bestNeighbor = neighbor;
+					break;
 				}
 			}
 
 			if (bestNeighbor != null) {
 				currentSolution = bestNeighbor;
-				if (getTotalAmount(bestNeighbor) > getTotalAmount(bestSolution)) {
+				if (getUniqueDessertCount(bestNeighbor) > getUniqueDessertCount(bestSolution)) {
 					bestSolution = bestNeighbor;
 				}
 				tabuList.add(generateKey(currentSolution));
 				if (tabuList.size() > 10) {
-					tabuList.remove(tabuList.iterator().next()); // 保持Tabu List長度
+					tabuList.remove(tabuList.iterator().next());
 				}
 			}
 		}
 
-		return bestSolution;
+		return convertToDessertList(bestSolution);
 	}
 
-	private List<dessert> getRandomInitialSolution(List<dessert> allDesserts, int budget) {
-		List<dessert> solution = new ArrayList<>();
+	private Map<dessert, Integer> getRandomInitialSolution(List<dessert> allDesserts, int budget) {
+		Map<dessert, Integer> solution = new HashMap<>();
 		Collections.shuffle(allDesserts);
-		int totalCost = 0;
+		int total = 0;
 		for (dessert d : allDesserts) {
-			if (totalCost + d.getDessert_price() <= budget) {
-				solution.add(d);
-				totalCost += d.getDessert_price();
-			} else {
-				break;
+			int price = d.getDessert_price();
+			if (total + price <= budget) {
+				solution.put(d, 1); // 每種先選一次
+				total += price;
 			}
 		}
-		System.out.println("solution is " + solution.size());
 		return solution;
 	}
 
-	private List<List<dessert>> generateNeighbors(List<dessert> current, List<dessert> all, int budget) {
-		List<List<dessert>> neighbors = new ArrayList<>();
-		for (dessert d : all) {
-			if (!current.contains(d)) {
-				List<dessert> neighbor = new ArrayList<>(current);
-				neighbor.add(d);
-				if (getTotalPrice(neighbor) <= budget) {
-					neighbors.add(neighbor);
-				}
+	private List<Map<dessert, Integer>> generateNeighbors(Map<dessert, Integer> current, List<dessert> allDesserts,
+			int budget) {
+		List<Map<dessert, Integer>> neighbors = new ArrayList<>();
+
+		for (dessert d : allDesserts) {
+			Map<dessert, Integer> neighbor = new HashMap<>(current);
+			int count = neighbor.getOrDefault(d, 0);
+			neighbor.put(d, count + 1);
+			if (getTotalPrice(neighbor) <= budget) {
+				neighbors.add(neighbor);
 			}
 		}
+
 		return neighbors;
 	}
 
-	private int getTotalAmount(List<dessert> list) {
-		return list.stream().mapToInt(d -> d.getDessert_amount()).sum();
+	private int getTotalPrice(Map<dessert, Integer> map) {
+		return map.entrySet().stream().mapToInt(e -> e.getKey().getDessert_price() * e.getValue()).sum();
 	}
 
-	private int getTotalPrice(List<dessert> list) {
-		return list.stream().mapToInt(d -> d.getDessert_price()).sum();
+	private int getUniqueDessertCount(Map<dessert, Integer> map) {
+		return map.size();
 	}
 
-	private String generateKey(List<dessert> list) {
-		return list.stream().map(d -> d.getDessert_id().toString()).sorted().collect(Collectors.joining(","));
+	private String generateKey(Map<dessert, Integer> map) {
+		return map.entrySet().stream().map(e -> e.getKey().getDessert_id() + ":" + e.getValue()).sorted()
+				.collect(Collectors.joining(","));
+	}
+
+	private List<dessert> convertToDessertList(Map<dessert, Integer> map) {
+		List<dessert> result = new ArrayList<>();
+		for (Map.Entry<dessert, Integer> entry : map.entrySet()) {
+			dessert d = entry.getKey();
+			d.setSelectedAmount(entry.getValue()); // 用來顯示選幾個
+			result.add(d);
+		}
+		return result;
+	}
+
+	public List<dessert> selectDessertsByBudget(int budget) {
+		List<dessert> allDesserts = new ArrayList<>();
+		try {
+			allDesserts = dessertDao.getAllDessertObjectList();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		int[] dp = new int[budget + 1]; // dp[b]：代表預算為 b 時的最大總價值
+		int[] track = new int[budget + 1]; // track[b]：代表預算 b 最後選的是哪個甜點
+		Arrays.fill(track, -1);
+
+		for (int b = 0; b <= budget; b++) { // ✅ b 可以等於 budget
+			for (int i = 0; i < allDesserts.size(); i++) {
+				dessert d = allDesserts.get(i);
+				int price = d.getDessert_price();
+				if (price <= b && dp[b - price] + price > dp[b]) {
+					if (canSelectMore(d, b - price, track, allDesserts)) {
+						dp[b] = dp[b - price] + price;
+						track[b] = i;
+					}
+				}
+			}
+		}
+
+		// 找到最大總價值對應的預算點（可等於 budget）
+		int bestBudgetUsed = 0;
+		for (int i = 0; i <= budget; i++) {
+			if (dp[i] > dp[bestBudgetUsed])
+				bestBudgetUsed = i;
+		}
+
+		// 回推選擇的甜點
+		int b = bestBudgetUsed;
+		while (b > 0 && track[b] != -1) {
+			int idx = track[b];
+			dessert d = allDesserts.get(idx);
+			d.setSelectedAmount(d.getSelectedAmount() + 1);
+			b -= d.getDessert_price();
+		}
+
+		// 回傳被選擇的甜點（selectedAmount > 0）
+		return allDesserts.stream().filter(d -> d.getSelectedAmount() > 0).collect(Collectors.toList());
+	}
+
+	private boolean canSelectMore(dessert d, int prevBudget, int[] track, List<dessert> allDesserts) {
+		int count = 0;
+		int b = prevBudget;
+		int targetIndex = allDesserts.indexOf(d);
+
+		while (b > 0 && track[b] != -1) {
+			if (track[b] == targetIndex)
+				count++;
+			b -= allDesserts.get(track[b]).getDessert_price();
+		}
+
+		return count < d.getDessert_amount();
 	}
 
 }
