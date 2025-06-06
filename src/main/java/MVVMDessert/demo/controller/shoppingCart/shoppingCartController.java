@@ -249,9 +249,7 @@ public class shoppingCartController {
 			itemForShow.put("dessert_price", dessertDao.getOneDessert(item_intotal).getInt("dessert_price"));
 			itemForShow.put("dessert_id", dessertDao.getOneDessert(item_intotal).getInt("dessert_id"));
 			itemForShow.put("dessert_amount", item_amount);
-			itemForShow.put("subtotal",
-					checkforRedisDiscount(dessertDao.getOneDessert(item_intotal).getInt("dessert_id"), item_amount,
-							dessertDao.getOneDessert(item_intotal).getInt("dessert_price")));
+			itemForShow.put("subtotal",dessertDao.getOneDessert(item_intotal).getInt("dessert_price")*item_amount);
 			result.put(itemForShow);
 //			checkforRedisDiscount(item_intotal);
 		}

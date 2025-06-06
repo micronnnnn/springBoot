@@ -62,6 +62,7 @@ import MVVMDessert.demo.model.dessert;
 import MVVMDessert.demo.model.dessertOrder;
 import MVVMDessert.demo.model.dessertOrderItem;
 import MVVMDessert.demo.model.orderItemPrint;
+import MVVMDessert.demo.service.EmailProducer;
 import MVVMDessert.demo.service.paymentService;
 import net.sf.jasperreports.engine.JREmptyDataSource;
 import net.sf.jasperreports.engine.JRException;
@@ -99,6 +100,9 @@ public class orderController {
 
 	@Autowired
 	private paymentService paymentService; // 注入 PaymentService
+	
+	@Autowired
+	private EmailProducer emailProducer;
 
 	private String handleError1(@Valid dessertOrder dessertOrder) {
 		// 錯誤處理邏輯
@@ -501,24 +505,25 @@ public class orderController {
 				+ show_item + "\n\n" + "共" + total + "元\n\n";
 
 //		產生電子郵件
-		MailService mailService = new MailService();
-		mailService.sendMail(to, subject, messageText);
+//		MailService mailService = new MailService();
+		emailProducer.sendEmailRequest(to, subject, messageText);
+//		mailService.sendMail(to, subject, messageText);
 
-		// 呼叫 LINE Pay API
-		try {
-			Map<String, String> linePayResponse = paymentService.requestPayment(String.valueOf(order_id), // 使用訂單 ID 作為
-																											// LINE Pay
-																											// 的 orderId
-					printList.get(0).getDessert_name()
-							+ (printList.size() > 1 ? " 等 " + printList.size() + " 項商品" : ""), // 商品名稱
-					total // 總金額
-			);
-			return "訂單成立"; // 回傳包含付款連結的 JSON
-		} catch (Exception e) {
-			// 處理 LINE Pay API 呼叫失敗的情況，可能需要記錄錯誤並給予使用者友善的回應
-			e.printStackTrace();
-			return "訂單失敗";
-		}
+//		// 呼叫 LINE Pay API
+//		try {
+//			Map<String, String> linePayResponse = paymentService.requestPayment(String.valueOf(order_id), // 使用訂單 ID 作為
+//																											// LINE Pay
+//																											// 的 orderId
+//					printList.get(0).getDessert_name()
+//							+ (printList.size() > 1 ? " 等 " + printList.size() + " 項商品" : ""), // 商品名稱
+//					total // 總金額
+//			);
+//			return "訂單成立"; // 回傳包含付款連結的 JSON
+//		} catch (Exception e) {
+//			// 處理 LINE Pay API 呼叫失敗的情況，可能需要記錄錯誤並給予使用者友善的回應
+//			e.printStackTrace();
+//			return "訂單失敗";
+//		}
 
 ////		產生簡訊
 //		String ch_phone = "+886" + order_info.getString("customer_phone");
@@ -527,7 +532,7 @@ public class orderController {
 //		SMSservice smService = new SMSservice();
 //		smService.sendSMS(ch_phone, messageText);
 
-//		return "訂單成立";
+		return "訂單成立";
 
 	}
 
@@ -549,60 +554,60 @@ public class orderController {
 
 	}
 
-//	寄信gmail
-
-	class MailService {
-
-		// 設定傳送郵件:至收信人的Email信箱,Email主旨,Email內容
-		public void sendMail(String to, String subject, String messageText) {
-
-			try {
-				// 設定使用SSL連線至 Gmail smtp Server
-				Properties props = new Properties();
-				props.put("mail.smtp.host", "smtp.gmail.com");
-				props.put("mail.smtp.socketFactory.port", "465");
-				props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
-				props.put("mail.smtp.auth", "true");
-				props.put("mail.smtp.port", "465");
-
-				// ●設定 gmail 的帳號 & 密碼 (將藉由你的Gmail來傳送Email)
-				// ●1) 登入你的Gmail的:
-				// ●2) 點選【管理你的 Google 帳戶】
-				// ●3) 點選左側的【安全性】
-
-				// ●4) 完成【兩步驟驗證】的所有要求如下:
-				// ●4-1) (請自行依照步驟要求操作之.....)
-
-				// ●5) 完成【應用程式密碼】的所有要求如下:
-				// ●5-1) 下拉式選單【選取應用程式】--> 選取【郵件】
-				// ●5-2) 下拉式選單【選取裝置】--> 選取【Windows 電腦】
-				// ●5-3) 最後按【產生】密碼
-				final String myGmail = "weichenglee0603@gmail.com";
-				final String myGmail_password = "iexkabnhhnavwyfp";
-				Session session = Session.getInstance(props, new Authenticator() {
-					protected PasswordAuthentication getPasswordAuthentication() {
-						return new PasswordAuthentication(myGmail, myGmail_password);
-					}
-				});
-
-				Message message = new MimeMessage(session);
-				message.setFrom(new InternetAddress(myGmail));
-				message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
-
-				// 設定信中的主旨
-				message.setSubject(subject);
-				// 設定信中的內容
-				message.setText(messageText);
-
-				Transport.send(message);
-				System.out.println("傳送成功!");
-			} catch (MessagingException e) {
-				System.out.println("傳送失敗!");
-				e.printStackTrace();
-			}
-		}
-
-	}
+////	寄信gmail
+//
+//	class MailService {
+//
+//		// 設定傳送郵件:至收信人的Email信箱,Email主旨,Email內容
+//		public void sendMail(String to, String subject, String messageText) {
+//
+//			try {
+//				// 設定使用SSL連線至 Gmail smtp Server
+//				Properties props = new Properties();
+//				props.put("mail.smtp.host", "smtp.gmail.com");
+//				props.put("mail.smtp.socketFactory.port", "465");
+//				props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+//				props.put("mail.smtp.auth", "true");
+//				props.put("mail.smtp.port", "465");
+//
+//				// ●設定 gmail 的帳號 & 密碼 (將藉由你的Gmail來傳送Email)
+//				// ●1) 登入你的Gmail的:
+//				// ●2) 點選【管理你的 Google 帳戶】
+//				// ●3) 點選左側的【安全性】
+//
+//				// ●4) 完成【兩步驟驗證】的所有要求如下:
+//				// ●4-1) (請自行依照步驟要求操作之.....)
+//
+//				// ●5) 完成【應用程式密碼】的所有要求如下:
+//				// ●5-1) 下拉式選單【選取應用程式】--> 選取【郵件】
+//				// ●5-2) 下拉式選單【選取裝置】--> 選取【Windows 電腦】
+//				// ●5-3) 最後按【產生】密碼
+//				final String myGmail = "s9912045@gmail.com";
+//				final String myGmail_password = "cmtl okwa hidk ptez";
+//				Session session = Session.getInstance(props, new Authenticator() {
+//					protected PasswordAuthentication getPasswordAuthentication() {
+//						return new PasswordAuthentication(myGmail, myGmail_password);
+//					}
+//				});
+//
+//				Message message = new MimeMessage(session);
+//				message.setFrom(new InternetAddress(myGmail));
+//				message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
+//
+//				// 設定信中的主旨
+//				message.setSubject(subject);
+//				// 設定信中的內容
+//				message.setText(messageText);
+//
+//				Transport.send(message);
+//				System.out.println("傳送成功!");
+//			} catch (MessagingException e) {
+//				System.out.println("傳送失敗!");
+//				e.printStackTrace();
+//			}
+//		}
+//
+//	}
 
 //	報表細部設定
 	/**

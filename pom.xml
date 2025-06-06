@@ -19,6 +19,12 @@
 		<java.version>17</java.version>
 	</properties>
 	<dependencies>
+	
+	    <!-- Kafka 核心整合 -->
+    <dependency>
+        <groupId>org.springframework.kafka</groupId>
+        <artifactId>spring-kafka</artifactId>
+    </dependency>
 		
 <!--   WebFlux 測試                               -->
 <!--  <dependency>-->
