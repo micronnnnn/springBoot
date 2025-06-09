@@ -1,0 +1,95 @@
+version: "3.8"
+
+services:
+  # ELK Stack 服務
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.9.2
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g" # 調整 Elasticsearch 的 Java Heap 大小
+    ports:
+      - "9200:9200" # 暴露 HTTP API 端口
+      - "9300:9300" # 暴露節點間通訊端口 (可選，但建議保留)
+    volumes:
+      - esdata:/usr/share/elasticsearch/data # 持久化 Elasticsearch 數據
+    networks:
+      - elk-kafka-network # 將 Elasticsearch 加入自定義網路
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.9.2
+    container_name: logstash
+    # 確保 Elasticsearch 和 Kafka 在 Logstash 之前啟動
+    depends_on:
+      - elasticsearch
+      - kafka # 新增對 Kafka 的依賴
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro # 掛載 Logstash 配置
+      - ./logs:/usr/share/logstash/logs:ro # 掛載應用程式日誌目錄
+    ports:
+      - "5044:5044" # Logstash Beats 輸入端口 (如果你的應用程式使用 Beats 發送日誌)
+    environment:
+      LS_JAVA_OPTS: "-Xmx1g -Xms1g" # 調整 Logstash 的 Java Heap 大小
+    networks:
+      - elk-kafka-network # 將 Logstash 加入自定義網路
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.9.2
+    container_name: kibana
+    depends_on:
+      - elasticsearch # Kibana 依賴 Elasticsearch
+    ports:
+      - "5601:5601" # 暴露 Kibana Web UI 端口
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200 # 配置 Kibana 連接到 Elasticsearch 服務名稱
+    networks:
+      - elk-kafka-network # 將 Kibana 加入自定義網路
+
+  # Kafka Stack 服務
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: zookeeper
+    ports:
+      - "2181:2181" # 暴露 Zookeeper 客戶端端口
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - elk-kafka-network # 將 Zookeeper 加入自定義網路
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: kafka
+    ports:
+      - "9092:9092" # 容器內部 listener 端口 (給其他容器用，例如 Logstash)
+      - "29092:29092" # 對外暴露端口 (給本機或其他外部應用程式用)
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181 # Kafka 連接到 Zookeeper 服務名稱
+
+      # Kafka Listener 配置是關鍵：
+      # PLAINTEXT: 內部給 Docker 網路內的服務使用 (例如 Logstash 連接 kafka:9092)
+      # PLAINTEXT_HOST: 對外暴露給主機使用 (例如你的 Spring Boot 或測試工具連接 localhost:29092)
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      # 外部應用程式和 Docker 網路內服務都需要能夠解析到 Kafka
+      # PLAINTEXT://kafka:9092 -> Logstash 在 Docker 網路內通過服務名連接
+      # PLAINTEXT_HOST://localhost:29092 -> 主機或其他外部程式通過 localhost 連接
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT # Broker 之間的通訊
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper # Kafka 依賴 Zookeeper
+    networks:
+      - elk-kafka-network # 將 Kafka 加入自定義網路
+
+# 定義數據卷，用於持久化 Elasticsearch 數據
+volumes:
+  esdata:
+
+# 定義一個共用的網路，讓所有服務可以互相通訊
+networks:
+  elk-kafka-network:
+    driver: bridge
